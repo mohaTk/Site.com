@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>মহা টাকা — MotaTaka Official App Platform</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Plus+Jakarta+Sans:wght@500;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <style>
+        :root {
+            --bg-base: #020408;
+            --bg-surface: #070d1a;
+            --bg-card: rgba(11, 19, 35, 0.90);
+            --gold: #facc15;
+            --gold-glow: rgba(250, 204, 21, 0.35);
+            --emerald: #10b981;
+            --emerald-glow: rgba(16, 185, 129, 0.28);
+            --cyan: #38bdf8;
+            --purple: #a855f7;
+            --bkash: #d81b60;
+            --nagad: #ea580c;
+            --rocket: #7c3aed;
+            --danger: #f43f5e;
+            --text-light: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: rgba(255, 255, 255, 0.08);
+            --border-gold: rgba(250, 204, 21, 0.38);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Hind Siliguri', 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        html, body {
+            width: 100%;
+            max-width: 100vw;
+            overflow-x: hidden !important;
+            background-color: var(--bg-base);
+            color: var(--text-light);
+            min-height: 100vh;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            padding-bottom: 85px;
+        }
+
+        /* Toast */
+        .toast-notification {
+            position: fixed;
+            top: 15px;
+            left: 50%;
+            transform: translate(-50%, -150%);
+            width: 90%;
+            max-width: 400px;
+            background: #09101f;
+            border: 1px solid var(--emerald);
+            padding: 12px 18px;
+            border-radius: 12px;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.85);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.88rem;
+            font-weight: 700;
+            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+        }
+        .toast-notification.active { transform: translate(-50%, 0); pointer-events: auto; }
+        .toast-notification.success { border-color: var(--emerald); color: var(--emerald); }
+        .toast-notification.pending { border-color: var(--gold); color: var(--gold); }
+        .toast-notification.error { border-color: var(--danger); color: var(--danger); }
+
+        /* ━━━━━━━━━━ LIVE WINNER SPOTLIGHT BOX ━━━━━━━━━━ */
+        .winner-spotlight-box {
+            width: 100%;
+            max-width: 1100px;
+            margin: 10px auto 0;
+            padding: 0 14px;
+        }
+        .spotlight-card {
+            background: linear-gradient(135deg, rgba(16, 27, 50, 0.85), rgba(7, 13, 26, 0.95));
+            border: 1px solid var(--border-gold);
+            border-radius: 12px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+        .spotlight-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .spotlight-badge {
+            background: rgba(250, 204, 21, 0.15);
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .pulse-dot-red {
+            width: 6px; height: 6px; background: #ef4444; border-radius: 50%;
+            animation: blink 1s infinite;
+        }
+        .spotlight-winner-text {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .spotlight-winner-text span {
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+        }
+        .spotlight-marquee {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            border-top: 1px solid rgba(255,255,255,0.06);
+            padding-top: 4px;
+        }
+
+        /* Nav */
+        nav {
+            width: 100%;
+            background: rgba(8, 14, 28, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .brand-logo { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        .logo-coin {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, #facc15, #ca8a04);
+            border-radius: 10px; display: flex; align-items: center;
+            justify-content: center; font-size: 1.3rem; font-weight: 900;
+            color: #000; box-shadow: 0 0 15px var(--gold-glow);
+        }
+        .brand-name { font-size: 1.3rem; font-weight: 800; }
+        .brand-name span { color: var(--gold); }
+
+        .nav-right-actions { display: flex; align-items: center; gap: 10px; }
+        .wallet-pill {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid var(--emerald);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            color: var(--emerald);
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .nav-avatar-btn {
+            width: 36px; height: 36px; border-radius: 50%;
+            border: 2px solid var(--gold); object-fit: cover; cursor: pointer;
+        }
+
+        .btn-dots-menu {
+            width: 36px; height: 36px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+            border-radius: 8px; color: #fff;
+            font-size: 1.2rem; display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+        }
+
+        /* Drawer */
+        .drawer-backdrop {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(6px);
+            z-index: 1000;
+        }
+        .side-drawer {
+            position: fixed; top: 0; right: 0; width: 290px; height: 100%;
+            background: #080f1e; border-left: 1px solid var(--border);
+            z-index: 1001; padding: 24px 18px; display: flex; flex-direction: column;
+            justify-content: space-between; transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .side-drawer.open { transform: translateX(0); }
+
+        .drawer-user-card {
+            background: #040812; border: 1px solid var(--border);
+            padding: 14px; border-radius: 12px; margin-bottom: 18px;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .drawer-avatar {
+            width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--gold); object-fit: cover;
+        }
+        .drawer-links { display: flex; flex-direction: column; gap: 10px; }
+        .drawer-link-item {
+            background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border);
+            padding: 11px 14px; border-radius: 8px; color: #fff; font-weight: 700;
+            font-size: 0.88rem; display: flex; align-items: center; gap: 10px;
+            cursor: pointer; text-decoration: none;
+        }
+        .drawer-link-item:hover { border-color: var(--gold); color: var(--gold); }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background: rgba(8, 14, 28, 0.96); backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            display: grid; grid-template-columns: repeat(6, 1fr);
+            padding: 8px 4px 10px; z-index: 999;
+            box-shadow: 0 -8px 25px rgba(0, 0, 0, 0.5);
+        }
+        .bottom-nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 3px; color: var(--text-muted); text-decoration: none;
+            font-size: 0.65rem; font-weight: 700; cursor: pointer;
+            position: relative;
+        }
+        .bottom-nav-item .nav-icon { font-size: 1.25rem; }
+        .bottom-nav-item.active { color: var(--gold); }
+        .bottom-nav-item.active::after {
+            content: ''; position: absolute; top: -8px; width: 24px; height: 3px;
+            background: var(--gold); border-radius: 2px; box-shadow: 0 0 10px var(--gold);
+        }
+
+        .container {
+            width: 100%; max-width: 1100px; margin: 10px auto 0;
+            padding: 0 14px; display: flex; flex-direction: column; gap: 16px;
+        }
+
+        .tab-view { width: 100%; display: flex; flex-direction: column; gap: 16px; }
+
+        .card {
+            width: 100%; background: var(--bg-card); backdrop-filter: blur(20px);
+            border-radius: 16px; padding: 20px 16px; border: 1px solid var(--border);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+        }
+        .card-header {
+            font-size: 1.05rem; font-weight: 800; margin-bottom: 14px;
+            display: flex; align-items: center; justify-content: space-between;
+            color: #fff; border-bottom: 1px solid var(--border); padding-bottom: 10px;
+        }
+
+        /* Sector Notice */
+        .sector-notice-board {
+            background: linear-gradient(135deg, rgba(250, 204, 21, 0.12), rgba(6, 11, 24, 0.95));
+            border: 1px solid var(--border-gold);
+            border-left: 4px solid var(--gold);
+            padding: 12px 14px;
+            border-radius: 10px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .sector-notice-icon { font-size: 1.2rem; line-height: 1; flex-shrink: 0; }
+        .sector-notice-text { font-size: 0.82rem; color: #fef08a; line-height: 1.5; font-weight: 600; }
+
+        .sector-banner-img {
+            width: 100%; height: 140px; object-fit: cover; border-radius: 12px;
+            border: 1px solid var(--border); margin-bottom: 14px; display: block;
+        }
+
+        /* Hero Banner */
+        .hero-banner {
+            width: 100%; border-radius: 16px; padding: 24px 18px;
+            background: linear-gradient(135deg, rgba(13, 22, 44, 0.95), rgba(6, 11, 24, 0.96)), url('https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=800&q=80');
+            background-size: cover; background-position: center; border: 1px solid var(--border-gold);
+            display: flex; flex-direction: column; gap: 16px; position: relative; overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6); text-align: center;
+        }
+        .hero-banner::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(180deg, rgba(2, 4, 8, 0.92) 0%, rgba(2, 4, 8, 0.65) 100%);
+            z-index: 1;
+        }
+        .hero-content { position: relative; z-index: 2; width: 100%; }
+        .hero-badge {
+            background: var(--gold-glow); border: 1px solid var(--gold); color: var(--gold);
+            padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 800;
+            display: inline-block; margin-bottom: 10px; text-transform: uppercase;
+        }
+        .hero-title { font-size: 1.7rem; font-weight: 800; line-height: 1.3; margin-bottom: 6px; color: #fff; }
+        .hero-sub { color: var(--text-muted); font-size: 0.88rem; line-height: 1.45; margin-bottom: 12px; }
+
+        .jackpot-display {
+            position: relative; z-index: 2; width: 100%; background: rgba(7, 13, 26, 0.92);
+            backdrop-filter: blur(16px); border: 1px solid var(--border-gold);
+            padding: 18px 14px; border-radius: 14px; text-align: center;
+            box-shadow: 0 0 25px var(--gold-glow);
+        }
+        .jackpot-sub { font-size: 0.72rem; color: var(--text-muted); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+        .jackpot-num { font-size: 2.3rem; font-weight: 900; color: var(--gold); font-family: 'JetBrains Mono', monospace; margin: 4px 0; }
+        
+        .countdown-label-strip {
+            font-size: 0.72rem; color: var(--cyan); font-weight: 700; margin-top: 6px;
+            border-top: 1px solid var(--border); padding-top: 6px;
+        }
+        .countdown-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-top: 8px; }
+        .cd-box {
+            background: #020408; padding: 6px 2px; border-radius: 7px;
+            font-family: 'JetBrains Mono', monospace; border: 1px solid var(--border);
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .cd-num { font-size: 1.1rem; font-weight: 800; color: #fff; }
+        .cd-txt { font-size: 0.58rem; color: var(--text-muted); text-transform: uppercase; }
+
+        /* Dynamic Prize Tier Cards */
+        .prize-tier-container {
+            width: 100%; display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 10px;
+        }
+        @media (min-width: 768px) {
+            .prize-tier-container { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+            .hero-banner { flex-direction: row; text-align: left; }
+            .hero-content { max-width: 60%; }
+            .jackpot-display { width: 35%; }
+        }
+
+        .prize-tier-card {
+            background: #060b17; border: 1px solid var(--border);
+            border-radius: 12px; padding: 14px; text-align: center;
+            display: flex; flex-direction: column; gap: 3px;
+        }
+
+        .stepper-container { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 12px 0; }
+        .stepper-btn {
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, rgba(250, 204, 21, 0.15), rgba(250, 204, 21, 0.05));
+            border: 2px solid var(--gold); border-radius: 12px; color: var(--gold);
+            font-size: 1.6rem; font-weight: 900; display: flex; align-items: center;
+            justify-content: center; cursor: pointer;
+        }
+        .stepper-btn:active { transform: scale(0.92); background: var(--gold); color: #000; }
+        .stepper-input {
+            width: 100px; height: 48px; text-align: center; font-size: 1.6rem; font-weight: 900;
+            font-family: 'JetBrains Mono', monospace; background: #050a14;
+            border: 1px solid var(--border-gold); border-radius: 12px; color: #fff;
+        }
+
+        .quick-chips-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+        .quick-chip {
+            background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border);
+            padding: 8px 0; border-radius: 8px; color: #fff; font-size: 0.85rem;
+            font-weight: 700; cursor: pointer;
+        }
+        .quick-chip.active { border-color: var(--gold); color: var(--gold); background: rgba(250, 204, 21, 0.12); }
+
+        .form-group { margin-bottom: 14px; width: 100%; }
+        label { display: block; font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; }
+        input, select {
+            width: 100%; padding: 12px 14px; background: #050a14; border: 1px solid var(--border);
+            border-radius: 10px; color: #fff; font-size: 0.95rem; outline: none;
+        }
+        input:focus, select:focus { border-color: var(--gold); }
+
+        .gateway-number-item {
+            background: #060c18; border: 1px solid var(--border-gold);
+            padding: 10px 14px; border-radius: 10px; margin-top: 8px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .btn-copy {
+            background: var(--gold); color: #000; font-size: 0.72rem; font-weight: 800;
+            border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer;
+        }
+
+        .mfs-grid { width: 100%; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 6px; }
+        .mfs-btn {
+            padding: 12px 6px; border: 2px solid var(--border); border-radius: 10px;
+            background: #050a14; color: #fff; font-weight: 700; font-size: 0.82rem;
+            cursor: pointer; text-align: center;
+        }
+        .mfs-btn.wallet.active { border-color: var(--emerald); color: var(--emerald); background: rgba(16, 185, 129, 0.12); }
+        .mfs-btn.bkash.active { border-color: var(--bkash); color: var(--bkash); }
+        .mfs-btn.nagad.active { border-color: var(--nagad); color: var(--nagad); }
+        .mfs-btn.rocket.active { border-color: var(--rocket); color: var(--rocket); }
+
+        .total-strip {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #050a14; border: 1px solid var(--border); padding: 14px 18px;
+            border-radius: 10px; margin: 16px 0; font-weight: 700;
+        }
+        .total-price { font-size: 1.45rem; color: var(--gold); font-family: 'JetBrains Mono', monospace; }
+
+        .btn-buy {
+            width: 100%; background: linear-gradient(135deg, var(--gold), #ca8a04);
+            color: #050811; padding: 14px; border: none; border-radius: 10px;
+            font-size: 1.05rem; font-weight: 800; cursor: pointer;
+            box-shadow: 0 4px 18px var(--gold-glow);
+        }
+
+        .support-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .support-btn {
+            padding: 12px; border-radius: 10px; text-decoration: none;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            font-weight: 800; font-size: 0.85rem; color: #fff;
+        }
+        .support-btn.tg { background: linear-gradient(135deg, #229ED9, #1b7fb0); }
+        .support-btn.wa { background: linear-gradient(135deg, #25D366, #1da851); }
+
+        /* Gold Podium */
+        .gold-podium-card {
+            background: radial-gradient(circle at 50% 0%, rgba(250, 204, 21, 0.25) 0%, rgba(7, 13, 26, 0.95) 75%);
+            border: 2px solid var(--gold);
+            border-radius: 16px;
+            padding: 20px 16px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 0 35px var(--gold-glow);
+            margin-bottom: 16px;
+        }
+        .gold-podium-crown { font-size: 2.5rem; margin-bottom: 4px; }
+        .gold-podium-title { color: var(--gold); font-size: 0.90rem; font-weight: 800; text-transform: uppercase; }
+        .gold-podium-name { font-size: 1.4rem; font-weight: 900; color: #fff; margin: 4px 0; }
+        .gold-podium-prize { font-size: 2.2rem; font-weight: 900; color: var(--gold); font-family: 'JetBrains Mono', monospace; }
+        .gold-podium-ticket {
+            display: inline-block; background: #040711; border: 1px dashed var(--gold);
+            color: var(--cyan); padding: 4px 12px; border-radius: 6px; font-family: 'JetBrains Mono'; font-size: 0.80rem;
+        }
+
+        .leaderboard-list { display: flex; flex-direction: column; gap: 8px; }
+        .leaderboard-item {
+            background: rgba(7, 12, 24, 0.85); border: 1px solid var(--border);
+            border-radius: 10px; padding: 12px 14px; display: flex;
+            justify-content: space-between; align-items: center;
+        }
+        .lb-rank {
+            width: 28px; height: 28px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-weight: 800;
+            font-size: 0.8rem; font-family: 'JetBrains Mono';
+        }
+        .lb-rank.r1 { background: var(--gold); color: #000; }
+        .lb-rank.r2 { background: var(--cyan); color: #000; }
+        .lb-rank.r3 { background: var(--emerald); color: #000; }
+        .lb-rank.rn { background: #1e293b; color: var(--text-muted); }
+
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 320px; }
+        th { padding: 8px 6px; text-align: left; font-size: 0.70rem; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--border); }
+        td { padding: 10px 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.04); font-size: 0.80rem; font-family: 'JetBrains Mono', monospace; }
+        
+        .badge-active { color: var(--emerald); background: rgba(16, 185, 129, 0.1); border: 1px solid var(--emerald); padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.72rem; }
+        .badge-pending { color: var(--gold); background: rgba(250, 204, 21, 0.1); border: 1px solid var(--gold); padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 0.72rem; }
+
+        .btn-clear-history {
+            background: rgba(244, 63, 94, 0.15); border: 1px solid var(--danger);
+            color: var(--danger); font-size: 0.72rem; font-weight: 700;
+            padding: 4px 10px; border-radius: 6px; cursor: pointer;
+        }
+
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(8px);
+            display: flex; justify-content: center; align-items: center; z-index: 10000;
+            padding: 14px;
+        }
+        .modal-content {
+            background: #080f1d; border: 1px solid var(--border);
+            border-radius: 16px; padding: 22px 18px; width: 100%; max-width: 420px;
+            max-height: 90vh; overflow-y: auto;
+        }
+        .hidden { display: none !important; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    </style>
+</head>
+<body>
+
+<div id="liveToast" class="toast-notification">
+    <span id="toastIcon">🎉</span>
+    <span id="toastMsg">Notification message</span>
+</div>
+
+<nav>
+    <div class="brand-logo" onclick="switchTab('home')">
+        <div class="logo-coin">৳</div>
+        <div class="brand-name">মহা<span>টাকা</span></div>
+    </div>
+    <div class="nav-right-actions">
+        <div class="wallet-pill hidden" id="pillWallet">
+            <strong id="userBalanceText">৳ ০</strong>
+        </div>
+        <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80" id="navUserAvatar" class="nav-avatar-btn hidden" onclick="switchTab('profile')">
+        <button class="btn-dots-menu" onclick="toggleDrawer()">⋮</button>
+    </div>
+</nav>
+
+<!-- ━━━━━━━━━━ LIVE WINNER SPOTLIGHT CARD ━━━━━━━━━━ -->
+<div class="winner-spotlight-box">
+    <div class="spotlight-card">
+        <div class="spotlight-top-row">
+            <div class="spotlight-badge">
+                <span class="pulse-dot-red"></span>
+                <span>লাইভ বিজয়ী</span>
+            </div>
+            <div style="font-size:0.75rem; color:var(--emerald); font-weight:700;" id="dispSpotlightNote">
+                বিকাশ/নগদ ক্যাশআউট সম্পন্ন ✓
+            </div>
+        </div>
+        <div class="spotlight-winner-text" id="dispSpotlightWinnerLine">
+            <strong id="dispSpotlightName">বাদশাহ আলমগীর</strong> জিতেছেন <span id="dispSpotlightAmount">৳ ১,১৫,০০০ টাকা</span>!
+        </div>
+        <div class="spotlight-marquee">
+            <span id="dispLiveWinnerMarquee">বাদশাহ জিতেছেন ৳১,১৫,০০০ টাকা • মোঃ হাসান জিতেছেন ৳৫০,০০০ টাকা • রাকিবুল পেয়েছেন ৳২৫,০০০ টাকা</span>
+        </div>
+    </div>
+</div>
+
+<!-- 3-Dot Drawer Menu -->
+<div class="drawer-backdrop hidden" id="drawerBackdrop" onclick="toggleDrawer()"></div>
+<div class="side-drawer" id="sideDrawer">
+    <div>
+        <div class="drawer-user-card" id="drawerUserCard">
+            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80" id="drawerAvatarImg" class="drawer-avatar">
+            <div>
+                <div style="font-size:0.72rem; color:var(--text-muted);">প্রোফাইল</div>
+                <div style="font-size:1rem; font-weight:800; color:#fff;" id="drawerUserName">অতিথি (লগইন করুন)</div>
+                <div style="font-size:0.75rem; color:var(--gold);" id="drawerUserPhone">নম্বর নেই</div>
+                <div style="font-size:0.80rem; color:var(--emerald); font-weight:700;" id="drawerUserBalance">ব্যালেন্স: ৳ ০</div>
+            </div>
+        </div>
+
+        <div class="drawer-links">
+            <div class="drawer-link-item" onclick="switchTab('home'); toggleDrawer();">🏠 হোম পেজ</div>
+            <div class="drawer-link-item" onclick="switchTab('buy'); toggleDrawer();">🎟️ লটারির টিকিট ক্রয়</div>
+            <div class="drawer-link-item" onclick="switchTab('deposit'); toggleDrawer();">💳 ডিপোজিট / রিচার্জ</div>
+            <div class="drawer-link-item" onclick="switchTab('withdraw'); toggleDrawer();">💸 ক্যাশ আউট / উইথড্র</div>
+            <div class="drawer-link-item" onclick="switchTab('leaderboard'); toggleDrawer();">🏆 উইনার লিডারবোর্ড</div>
+            <div class="drawer-link-item" onclick="switchTab('profile'); toggleDrawer();">👤 প্রোফাইল ও সেটিংস</div>
+        </div>
+    </div>
+
+    <div>
+        <button id="btnAuthDrawer" class="btn-buy" onclick="openAuthModal(); toggleDrawer();" style="margin-bottom:8px;">লগইন / রেজিস্টার</button>
+        <button id="btnLogoutDrawer" class="btn-buy hidden" onclick="userLogout(); toggleDrawer();" style="background:var(--danger); color:#fff;">লগআউট</button>
+    </div>
+</div>
+
+<div class="container">
+
+    <!-- ━━━━━━━━━━ TAB 1: HOME PAGE ━━━━━━━━━━ -->
+    <div id="view-home" class="tab-view">
+        <div class="sector-notice-board" id="noticeBoxHome">
+            <span class="sector-notice-icon">📢</span>
+            <div class="sector-notice-text" id="noticeTextHome">
+                মহা টাকা প্ল্যাটফর্মে আপনাকে স্বাগতম! মেগা ড্র-এর কাউন্টডাউন শুরু হয়ে গেছে। আজই টিকিট সংগ্রহ করে মেগা পুরস্কার জিতে নিন!
+            </div>
+        </div>
+
+        <section class="hero-banner" id="mainHeroBanner">
+            <div class="hero-content">
+                <span class="hero-badge" id="heroTag">লাইভ মেগা জ্যাকপট ড্র</span>
+                <h1 class="hero-title" id="heroTitle">ভাগ্যের চাকা ঘুরিয়ে জিতুন মহা টাকা!</h1>
+                <p class="hero-sub" id="heroSub">বিকাশ, নগদ বা রকেট দিয়ে সহজে লটারির টিকিট কাটুন। প্রতি সপ্তাহেই হাজারো বিজয়ী জিতে নিচ্ছেন লক্ষাধিক টাকা।</p>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">
+                    প্রতি টিকিটের মূল্য: <strong style="color: var(--gold);" id="dispTicketPrice">৳ ৫০</strong>
+                </div>
+            </div>
+
+            <div class="jackpot-display">
+                <div class="jackpot-sub">টোটাল জ্যাকপট পুল</div>
+                <div class="jackpot-num" id="dispJackpot">৳ ৫,০০,০০০</div>
+                
+                <div class="countdown-label-strip" id="dispDrawLabel">
+                    ● ড্র এর তারিখ ও দিন: <span id="dispDrawDayText">১৫ নভেম্বর ২০২৬ (রবিবার রাত ৮:০০ টা)</span>
+                </div>
+
+                <div class="countdown-strip">
+                    <div class="cd-box"><span class="cd-num" id="cdDays">০০</span><span class="cd-txt">দিন</span></div>
+                    <div class="cd-box"><span class="cd-num" id="cdHours">০০</span><span class="cd-txt">ঘণ্টা</span></div>
+                    <div class="cd-box"><span class="cd-num" id="cdMins">০০</span><span class="cd-txt">মিনিট</span></div>
+                    <div class="cd-box"><span class="cd-num" id="cdSecs">০০</span><span class="cd-txt">সেকেন্ড</span></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DYNAMIC PRIZE TIERS CMS -->
+        <div class="card" style="border-color: rgba(250, 204, 21, 0.3);">
+            <div class="card-header" style="color: var(--gold);">
+                <span>🏆</span> মেগা ড্র পুরস্কার ক্যাটাগরি ও প্রাইজ পুল
+            </div>
+            <div class="prize-tier-container" id="dynamicPrizeTiersContainer"></div>
+        </div>
+
+        <button class="btn-buy" onclick="switchTab('buy')" style="font-size:1.1rem; padding:15px;">
+            🎟️ টিকিট কাটুন এবং ড্র তে অংশ নিন
+        </button>
+    </div>
+
+    <!-- ━━━━━━━━━━ TAB 2: BUY TICKET ━━━━━━━━━━ -->
+    <div id="view-buy" class="tab-view hidden">
+        <div class="sector-notice-board" id="noticeBoxBuy">
+            <span class="sector-notice-icon">📢</span>
+            <div class="sector-notice-text" id="noticeTextBuy">
+                টিকিট ক্রয় নোটিশ: একাধিক টিকিট ক্রয় করলে জেতার সম্ভাবনা বহুগুণ বৃদ্ধি পায়! ওয়ালেট ব্যালেন্স থাকলে সরাসরি ১-ক্লিকে কাটতে পারবেন।
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span>🎟️</span> লটারির টিকিট ক্রয় করুন
+                <span id="userPcsBadgeInCard" style="font-size: 0.75rem; color: var(--gold); font-weight: 700;">আমার কাছে আছে: ০ পিস</span>
+            </div>
+
+            <div class="form-group" style="text-align:center;">
+                <label>টিকিটের সংখ্যা নির্বাচন করুন (+ / − দিয়ে বাড়ান)</label>
+                
+                <div class="stepper-container">
+                    <button type="button" class="stepper-btn" onclick="stepTicket(-1)">−</button>
+                    <input type="number" id="ticketQty" class="stepper-input" value="1" min="1" max="100" readonly>
+                    <button type="button" class="stepper-btn" onclick="stepTicket(1)">+</button>
+                </div>
+
+                <div class="quick-chips-grid">
+                    <button type="button" class="quick-chip active" onclick="setTicketQty(1)">+১</button>
+                    <button type="button" class="quick-chip" onclick="setTicketQty(5)">+৫</button>
+                    <button type="button" class="quick-chip" onclick="setTicketQty(10)">+১০</button>
+                    <button type="button" class="quick-chip" onclick="setTicketQty(25)">+২৫</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>পেমেন্ট মেথড নির্বাচন করুন</label>
+                <div class="mfs-grid">
+                    <button type="button" class="mfs-btn wallet active" onclick="setPaymentMethod('Wallet')">💰 ওয়ালেট ব্যালেন্স</button>
+                    <button type="button" class="mfs-btn bkash" onclick="setPaymentMethod('bKash')">বিকাশ</button>
+                    <button type="button" class="mfs-btn nagad" onclick="setPaymentMethod('Nagad')">নগদ</button>
+                    <button type="button" class="mfs-btn rocket" onclick="setPaymentMethod('Rocket')">রকেট</button>
+                </div>
+            </div>
+
+            <!-- MULTI-NUMBER DISPLAY -->
+            <div id="buyMultiNumbersContainer" class="hidden">
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-top:10px;">নিচের যেকোনো সক্রিয় নম্বরে টাকা পাঠাতে পারেন:</div>
+                <div id="buyNumbersList"></div>
+            </div>
+
+            <div class="total-strip">
+                <span style="color: var(--text-muted);">মোট প্রদেয় টাকা:</span>
+                <span class="total-price" id="dispTotalAmount">৳ ৫০</span>
+            </div>
+
+            <button class="btn-buy" onclick="handleTicketCheckout()">
+                এখনই টিকিট কনফার্ম করুন
+            </button>
+        </div>
+    </div>
+
+    <!-- ━━━━━━━━━━ TAB 3: DEPOSIT / RECHARGE ━━━━━━━━━━ -->
+    <div id="view-deposit" class="tab-view hidden">
+        <div class="sector-notice-board" id="noticeBoxDeposit">
+            <span class="sector-notice-icon">📢</span>
+            <div class="sector-notice-text" id="noticeTextDeposit">
+                ডিপোজিট সতর্কতা: শুধুমাত্র নিচে দেওয়া সক্রিয় নম্বরে টাকা পাঠিয়ে সঠিক TrxID ও স্ক্রিনশট সাবমিট করুন। ৫-১০ মিনিটের মধ্যে ব্যালেন্স যোগ হবে।
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span>💳</span> ওয়ালেট ডিপোজিট ও রিচার্জ
+            </div>
+
+            <div class="form-group">
+                <label>ডিপোজিট গেটওয়ে নির্বাচন করুন</label>
+                <div class="mfs-grid">
+                    <button type="button" class="mfs-btn bkash active" onclick="setDepGateway('bKash')">বিকাশ</button>
+                    <button type="button" class="mfs-btn nagad" onclick="setDepGateway('Nagad')">নগদ</button>
+                    <button type="button" class="mfs-btn rocket" onclick="setDepGateway('Rocket')">রকেট</button>
+                </div>
+            </div>
+
+            <div id="depMultiNumbersContainer" style="margin-bottom: 14px;">
+                <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:6px;">অফিসিয়াল ডিপোজিট নম্বরসমূহ:</div>
+                <div id="depNumbersList"></div>
+            </div>
+
+            <div class="form-group">
+                <label>টাকার পরিমাণ (BDT)</label>
+                <input type="number" id="tabDepAmount" placeholder="যেমন: 500">
+            </div>
+            <div class="form-group">
+                <label>আপনার প্রেরক মোবাইল নম্বর</label>
+                <input type="text" id="tabDepSenderPhone" placeholder="01XXXXXXXXX">
+            </div>
+            <div class="form-group">
+                <label>Transaction ID (TrxID)</label>
+                <input type="text" id="tabDepTrxId" placeholder="e.g. 9J28DA10K" style="text-transform:uppercase;">
+            </div>
+            <div class="form-group">
+                <label>পেমেন্টের স্ক্রিনশট সিলেক্ট করুন</label>
+                <input type="file" id="tabDepScreenshot" accept="image/*">
+            </div>
+
+            <button class="btn-buy" onclick="submitTabDeposit()">
+                ডিপোজিট রিকোয়েস্ট সাবমিট করুন
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span>📋</span> আমার ডিপোজিট রেকর্ড
+                <button class="btn-clear-history" onclick="clearUserDepositHistory()">🧹 ক্লিয়ার হিস্টোরি</button>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>গেটওয়ে</th>
+                            <th>টাকা</th>
+                            <th>TrxID</th>
+                            <th>তারিখ</th>
+                            <th>স্ট্যাটাস</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userDepositsTbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ━━━━━━━━━━ TAB 4: WITHDRAW / CASHOUT ━━━━━━━━━━ -->
+    <div id="view-withdraw" class="tab-view hidden">
+        <div class="sector-notice-board" id="noticeBoxWithdraw">
+            <span class="sector-notice-icon">📢</span>
+            <div class="sector-notice-text" id="noticeTextWithdraw">
+                ক্যাশআউট নোটিশ: উত্তোলনের টাকা সরাসরি আপনার বিকাশ/নগদ/রকেট একাউন্টে ১০-২০ মিনিটের ভেতর সেন্ড মানি করে দেওয়া হবে।
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header" style="color:var(--gold);">
+                <span>💸</span> ব্যালেন্স ক্যাশ আউট / উইথড্র
+            </div>
+
+            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--emerald); padding: 12px; border-radius: 10px; margin-bottom: 14px;">
+                <div style="font-size: 0.75rem; color: var(--text-muted);">উত্তোলনযোগ্য ব্যালেন্স:</div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: var(--emerald);" id="withTabAvailableBal">৳ ০</div>
+            </div>
+
+            <div class="form-group">
+                <label>ক্যাশ আউট মাধ্যম</label>
+                <select id="tabWithMethod">
+                    <option value="bKash">bKash (বিকাশ)</option>
+                    <option value="Nagad">Nagad (নগদ)</option>
+                    <option value="Rocket">Rocket (রকেট)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>উত্তোলনের পরিমাণ (BDT)</label>
+                <input type="number" id="tabWithAmount" placeholder="যেমন: 500">
+            </div>
+
+            <div class="form-group">
+                <label>আপনার পার্সোনাল অ্যাকাউন্ট নম্বর</label>
+                <input type="text" id="tabWithAccountNum" placeholder="01XXXXXXXXX">
+            </div>
+
+            <button class="btn-buy" onclick="submitTabWithdraw()">
+                ক্যাশ আউট রিকোয়েস্ট পাঠান
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span>📋</span> ক্যাশ আউট হিস্টোরি
+                <button class="btn-clear-history" onclick="clearUserWithdrawHistory()">🧹 ক্লিয়ার হিস্টোরি</button>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>মেথড</th>
+                            <th>নম্বর</th>
+                            <th>টাকা</th>
+                            <th>তারিখ</th>
+                            <th>স্ট্যাটাস</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userWithdrawalsTbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ━━━━━━━━━━ TAB 5: LEADERBOARD ━━━━━━━━━━ -->
+    <div id="view-leaderboard" class="tab-view hidden">
+        <div class="sector-notice-board" id="noticeBoxLeaderboard">
+            <span class="sector-notice-icon">📢</span>
+            <div class="sector-notice-text" id="noticeTextLeaderboard">
+                উইনার নোটিশ: মেগা ড্র অনুষ্ঠিত হওয়া মাত্রই লাইভ অ্যালগরিদমে বিজয়ী নির্বাচিত হয়ে লিডারবোর্ডে গোল্ড প্রাইজ পুলে যুক্ত হয়ে যাবে!
+            </div>
+        </div>
+
+        <div class="gold-podium-card" id="goldPodiumCard">
+            <div class="gold-podium-crown">👑</div>
+            <div class="gold-podium-title">মেগা জ্যাকপট চ্যাম্পিয়ন (Rank #1)</div>
+            <div class="gold-podium-name" id="podiumWinnerName">বাদশাহ আলমগীর</div>
+            <div class="gold-podium-prize" id="podiumWinnerPrize">৳ ২,৫০,০০০</div>
+            <div>
+                <span class="gold-podium-ticket" id="podiumWinnerTicket">টিকিট: MT-859210</span>
+            </div>
+        </div>
+
+        <div class="card" style="border-color: var(--border-gold);">
+            <div class="card-header" style="color: var(--gold);">
+                <span>🏆</span> অন্যান্য শীর্ষ বিজয়ী তালিকা (র‍্যাংক ২ থেকে র‍্যাংক ১০+)
+            </div>
+            <div class="leaderboard-list" id="leaderboardList"></div>
+        </div>
+    </div>
+
+    <!-- ━━━━━━━━━━ TAB 6: PROFILE SETUP & TICKETS ━━━━━━━━━━ -->
+    <div id="view-profile" class="tab-view hidden">
+        <div class="sector-notice-board" id="noticeBoxProfile">
+            <span class="sector-notice-icon">📢</span>
+            <div class="sector-notice-text" id="noticeTextProfile">
+                প্রোফাইল সেটিংস: আপনার প্রোফাইল ছবি এবং পাসওয়ার্ড এখান থেকে পরিবর্তন করতে পারবেন।
+            </div>
+        </div>
+
+        <div class="card" style="border-color: var(--cyan);">
+            <div class="card-header" style="color: var(--cyan);">
+                <span>👤</span> আমার অ্যাকাউন্ট ও প্রোফাইল সেটআপ
+            </div>
+
+            <div style="display:flex; align-items:center; gap:16px; margin-bottom:18px; flex-wrap:wrap;">
+                <div style="position:relative;">
+                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80" id="profileMainAvatar" style="width:75px; height:75px; border-radius:50%; border:3px solid var(--gold); object-fit:cover;">
+                    <label for="avatarInputFile" style="position:absolute; bottom:0; right:0; background:var(--gold); color:#000; padding:4px 6px; border-radius:50%; font-size:0.75rem; cursor:pointer; font-weight:bold;">📷</label>
+                    <input type="file" id="avatarInputFile" accept="image/*" style="display:none;" onchange="handleAvatarUpload(event)">
+                </div>
+                <div>
+                    <h3 id="profileNameDisplay" style="color:#fff; font-size:1.2rem;">ইউজার</h3>
+                    <div style="font-size:0.85rem; color:var(--text-muted);" id="profilePhoneDisplay">০১৭XXXXXXXX</div>
+                    <div style="font-size:0.75rem; color:var(--emerald); margin-top:2px;">● অ্যাকাউন্ট স্ট্যাটাস: সক্রিয় (Active)</div>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-bottom:18px; text-align:center;">
+                <div style="background:#050a14; padding:10px; border-radius:10px; border:1px solid var(--border);">
+                    <div style="font-size:0.70rem; color:var(--text-muted);">মোট ব্যালেন্স</div>
+                    <div style="font-size:1.15rem; font-weight:800; color:var(--emerald);" id="profSummaryBal">৳ ০</div>
+                </div>
+                <div style="background:#050a14; padding:10px; border-radius:10px; border:1px solid var(--border);">
+                    <div style="font-size:0.70rem; color:var(--text-muted);">মোট টিকিট</div>
+                    <div style="font-size:1.15rem; font-weight:800; color:var(--gold);" id="profSummaryTkt">০ পিস</div>
+                </div>
+                <div style="background:#050a14; padding:10px; border-radius:10px; border:1px solid var(--border);">
+                    <div style="font-size:0.70rem; color:var(--text-muted);">রেফারেল</div>
+                    <div style="font-size:1.15rem; font-weight:800; color:var(--cyan);" id="profSummaryRef">০ জন</div>
+                </div>
+            </div>
+
+            <div style="border-top:1px solid var(--border); padding-top:14px;">
+                <h4 style="color:#fff; font-size:0.9rem; margin-bottom:10px;">নাম ও পাসওয়ার্ড পরিবর্তন:</h4>
+                <div class="form-group">
+                    <label>পূর্ণ নাম</label>
+                    <input type="text" id="profInputName" placeholder="আপনার নাম লিখুন">
+                </div>
+                <div class="form-group">
+                    <label>নতুন পাসওয়ার্ড</label>
+                    <input type="password" id="profInputPass" placeholder="নতুন পাসওয়ার্ড দিন">
+                </div>
+                <button class="btn-buy" onclick="saveProfileChanges()" style="padding:10px; font-size:0.9rem;">
+                    💾 প্রোফাইল আপডেট করুন
+                </button>
+            </div>
+        </div>
+
+        <div class="card" style="border-color: var(--cyan);">
+            <div class="card-header" style="color: var(--cyan);">
+                <span>💬</span> ২৪/৭ অফিসিয়াল কাস্টমার সাপোর্ট
+            </div>
+            <div class="support-grid">
+                <a href="https://t.me/" target="_blank" id="btnTelegramSupport" class="support-btn tg">
+                    ✈️ Telegram সাপোর্ট
+                </a>
+                <a href="https://wa.me/" target="_blank" id="btnWhatsappSupport" class="support-btn wa">
+                    💬 WhatsApp সাপোর্ট
+                </a>
+            </div>
+        </div>
+
+        <div class="card" style="border-color:var(--border-gold);">
+            <div class="card-header" style="color:var(--gold);">
+                <span>🎁</span> রেফারেল প্রোগ্রাম ও ফ্রি টিকিট
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:12px;">
+                <div style="background:#050a14; padding:12px; border-radius:10px; border:1px solid var(--border); text-align:center;">
+                    <div style="font-size:0.75rem; color:var(--text-muted);">মোট ইনভাইট</div>
+                    <div style="font-size:1.4rem; font-weight:800; color:var(--cyan);" id="dispUserRefCount">০ জন</div>
+                </div>
+                <div style="background:#050a14; padding:12px; border-radius:10px; border:1px solid var(--border); text-align:center;">
+                    <div style="font-size:0.75rem; color:var(--text-muted);">ফ্রি টিকিট লাভ</div>
+                    <div style="font-size:1.4rem; font-weight:800; color:var(--emerald);" id="dispUserRefBonus">০ পিস</div>
+                </div>
+            </div>
+            <div style="background:#050a14; padding:10px; border-radius:8px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; gap:6px;">
+                <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:0.80rem; color:#fff; font-family:'JetBrains Mono';" id="dispRefLinkText">
+                    লগইন করে লিংক পান
+                </div>
+                <button class="btn-copy" onclick="copyReferralLink()">কপি লিংক</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span>🎟️</span> আমার টিকিট হিস্টোরি (<span id="ticketCountTitle" style="color:var(--gold);">০ পিস</span>)
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>টিকিট কোড</th>
+                            <th>পেমেন্ট মেথড</th>
+                            <th>TrxID</th>
+                            <th>তারিখ</th>
+                            <th>স্ট্যাটাস</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTicketsTbody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Navigation Bar -->
+<div class="bottom-nav">
+    <div class="bottom-nav-item active" data-tab="home" onclick="switchTab('home')">
+        <span class="nav-icon">🏠</span>
+        <span>হোম</span>
+    </div>
+    <div class="bottom-nav-item" data-tab="buy" onclick="switchTab('buy')">
+        <span class="nav-icon">🎟️</span>
+        <span>টিকিট</span>
+    </div>
+    <div class="bottom-nav-item" data-tab="deposit" onclick="switchTab('deposit')">
+        <span class="nav-icon">💳</span>
+        <span>ডিপোজিট</span>
+    </div>
+    <div class="bottom-nav-item" data-tab="withdraw" onclick="switchTab('withdraw')">
+        <span class="nav-icon">💸</span>
+        <span>ক্যাশআউট</span>
+    </div>
+    <div class="bottom-nav-item" data-tab="leaderboard" onclick="switchTab('leaderboard')">
+        <span class="nav-icon">🏆</span>
+        <span>লিডারবোর্ড</span>
+    </div>
+    <div class="bottom-nav-item" data-tab="profile" onclick="switchTab('profile')">
+        <span class="nav-icon">👤</span>
+        <span>প্রোফাইল</span>
+    </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div id="modalAuth" class="modal hidden">
+    <div class="modal-content">
+        <h3 id="authTitle" style="color: #fff; margin-bottom: 6px;">অ্যাকাউন্ট লগইন</h3>
+        <p style="color: var(--text-muted); font-size: 0.80rem; margin-bottom: 14px;">লটারির টিকিট কিনতে লগইন বা রেজিস্টার করুন।</p>
+        
+        <form onsubmit="executeAuth(event)">
+            <div class="form-group hidden" id="grpName">
+                <label>আপনার পূর্ণ নাম</label>
+                <input type="text" id="authName" placeholder="আব্দুল করিম">
+            </div>
+            <div class="form-group">
+                <label>মোবাইল নম্বর</label>
+                <input type="text" id="authPhone" placeholder="01XXXXXXXXX" required>
+            </div>
+            <div class="form-group">
+                <label>পাসওয়ার্ড</label>
+                <input type="password" id="authPass" required>
+            </div>
+            <div class="form-group hidden" id="grpRef">
+                <label>রেফারেল কোড (ঐচ্ছিক)</label>
+                <input type="text" id="authRefCode" placeholder="যেমন: 017XXXXXXXX">
+            </div>
+            <button type="submit" class="btn-buy" id="btnAuthSubmit">লগইন করুন</button>
+        </form>
+
+        <p style="text-align: center; margin-top: 14px; font-size: 0.82rem; color: var(--text-muted);">
+            <a href="javascript:void(0)" id="toggleAuthModeBtn" onclick="toggleAuthMode()" style="color: var(--gold); text-decoration: none; font-weight: 700;">অ্যাকাউন্ট নেই? রেজিস্টার করুন</a>
+        </p>
+        <button class="btn-buy" style="background:var(--border); color:#fff; margin-top: 10px;" onclick="closeAuthModal()">বন্ধ করুন</button>
+    </div>
+</div>
+
+<script>
+    // ━━━━━━━━━━ FIREBASE CONFIGURATION ━━━━━━━━━━
+    const firebaseConfig = {
+        apiKey: "AIzaSyD_ecY-HTPjE4pOHfeu-9rsmC_Kq2q3KJc",
+        authDomain: "mota-a44b9.firebaseapp.com",
+        databaseURL: "https://mota-a44b9-default-rtdb.firebaseio.com",
+        projectId: "mota-a44b9",
+        storageBucket: "mota-a44b9.firebasestorage.app",
+        messagingSenderId: "412172467345",
+        appId: "1:412172467345:web:8987f46b6972825661d330",
+        measurementId: "G-C6Z24XTWLC"
+    };
+
+    let fbDatabase = null;
+    let isFirebaseReady = false;
+
+    try {
+        firebase.initializeApp(firebaseConfig);
+        fbDatabase = firebase.database();
+        isFirebaseReady = true;
+    } catch(e) {
+        console.warn("Firebase Init fallback:", e);
+    }
+
+    let selectedPayment = "Wallet";
+    let selectedDepGateway = "bKash";
+    let isRegisterMode = false;
+    let currentUser = null;
+    let currentSettings = {};
+
+    function showToast(message, type = "success") {
+        const toast = document.getElementById("liveToast");
+        const msgEl = document.getElementById("toastMsg");
+        const iconEl = document.getElementById("toastIcon");
+
+        toast.className = `toast-notification ${type} active`;
+        msgEl.innerText = message;
+        
+        if (type === "success") iconEl.innerText = "✅";
+        else if (type === "pending") iconEl.innerText = "⏳";
+        else iconEl.innerText = "⚠️";
+
+        setTimeout(() => { toast.classList.remove("active"); }, 3500);
+    }
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-view').forEach(v => v.classList.add('hidden'));
+        const targetView = document.getElementById('view-' + tabId);
+        if (targetView) targetView.classList.remove('hidden');
+
+        document.querySelectorAll('.bottom-nav-item').forEach(btn => btn.classList.remove('active'));
+        const activeNav = document.querySelector(`.bottom-nav-item[data-tab="${tabId}"]`);
+        if (activeNav) activeNav.classList.add('active');
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function toggleDrawer() {
+        document.getElementById('sideDrawer').classList.toggle('open');
+        document.getElementById('drawerBackdrop').classList.toggle('hidden');
+    }
+
+    function stepTicket(delta) {
+        let qty = parseInt(document.getElementById('ticketQty').value) || 1;
+        qty += delta;
+        if (qty < 1) qty = 1;
+        if (qty > 100) qty = 100;
+        document.getElementById('ticketQty').value = qty;
+        
+        document.querySelectorAll('.quick-chip').forEach(c => c.classList.remove('active'));
+        updateCalculation();
+    }
+
+    function setTicketQty(qty) {
+        document.getElementById('ticketQty').value = qty;
+        document.querySelectorAll('.quick-chip').forEach(c => c.classList.remove('active'));
+        if (event && event.target) event.target.classList.add('active');
+        updateCalculation();
+    }
+
+    function syncLivePlatform() {
+        const localSettings = JSON.parse(localStorage.getItem('bangla_settings')) || {};
+        applySettings(localSettings);
+
+        if (!isFirebaseReady) return;
+
+        fbDatabase.ref("settings").on("value", (snap) => {
+            currentSettings = snap.val() || {};
+            localStorage.setItem('bangla_settings', JSON.stringify(currentSettings));
+            applySettings(currentSettings);
+            updateReferralSection();
+        });
+
+        // ━━━━━━━━━━ REAL-TIME LEADERBOARD SYNC ━━━━━━━━━━
+        fbDatabase.ref("leaderboard").on("value", (snap) => {
+            const lbData = snap.val() || {};
+            renderLeaderboard(lbData);
+        });
+
+        fbDatabase.ref("tickets").on("value", renderUserTickets);
+        fbDatabase.ref("deposits").on("value", renderUserDeposits);
+        fbDatabase.ref("withdrawals").on("value", renderUserWithdrawals);
+    }
+
+    function applySettings(settings) {
+        document.getElementById('dispJackpot').innerText = `৳ ${parseInt(settings.jackpot || 500000).toLocaleString()}`;
+        document.getElementById('dispTicketPrice').innerText = `৳ ${settings.ticketPrice || 50}`;
+        
+        if (settings.homeBgImage) {
+            document.body.style.backgroundImage = `linear-gradient(180deg, rgba(2, 4, 8, 0.90) 0%, rgba(6, 11, 24, 0.94) 100%), url('${settings.homeBgImage}')`;
+        }
+
+        // Live Winner Box Update
+        const lBox = settings.liveWinnerBox || {};
+        if (lBox.spotlightName) document.getElementById('dispSpotlightName').innerText = lBox.spotlightName;
+        if (lBox.spotlightAmount) document.getElementById('dispSpotlightAmount').innerText = `৳ ${(lBox.spotlightAmount || 0).toLocaleString()} টাকা`;
+        if (lBox.spotlightNote) document.getElementById('dispSpotlightNote').innerText = lBox.spotlightNote;
+        if (lBox.text) document.getElementById('dispLiveWinnerMarquee').innerText = lBox.text;
+
+        // Notices
+        const nots = settings.notices || {};
+        if (nots.home) document.getElementById('noticeTextHome').innerText = nots.home;
+        if (nots.buy) document.getElementById('noticeTextBuy').innerText = nots.buy;
+        if (nots.deposit) document.getElementById('noticeTextDeposit').innerText = nots.deposit;
+        if (nots.withdraw) document.getElementById('noticeTextWithdraw').innerText = nots.withdraw;
+        if (nots.leaderboard) document.getElementById('noticeTextLeaderboard').innerText = nots.leaderboard;
+        if (nots.profile) document.getElementById('noticeTextProfile').innerText = nots.profile;
+
+        // Support Links
+        const sup = settings.support || {};
+        if (sup.telegram) {
+            const tgLink = sup.telegram.startsWith("http") ? sup.telegram : `https://t.me/${sup.telegram.replace('@', '')}`;
+            document.getElementById('btnTelegramSupport').href = tgLink;
+        }
+        if (sup.whatsapp) {
+            const waLink = sup.whatsapp.startsWith("http") ? sup.whatsapp : `https://wa.me/${sup.whatsapp.replace(/[^0-9]/g, '')}`;
+            document.getElementById('btnWhatsappSupport').href = waLink;
+        }
+
+        const tConf = settings.drawTimer || {};
+        if (tConf.dayText) document.getElementById('dispDrawDayText').innerText = tConf.dayText;
+
+        // Render Dynamic Prize Tiers CMS
+        renderDynamicPrizeTiers(settings.prizeTiers);
+
+        if (settings.mainBanner) {
+            document.getElementById('heroTag').innerText = settings.mainBanner.tag || "মেগা ড্র";
+            document.getElementById('heroTitle').innerText = settings.mainBanner.title || "";
+            document.getElementById('heroSub').innerText = settings.mainBanner.sub || "";
+            if (settings.mainBanner.bgImage) {
+                document.getElementById('mainHeroBanner').style.backgroundImage = `linear-gradient(135deg, rgba(13, 22, 44, 0.95), rgba(6, 11, 24, 0.96)), url('${settings.mainBanner.bgImage}')`;
+            }
+        }
+
+        renderMultiNumbers();
+        updateCalculation();
+    }
+
+    // Dynamic Prize Tiers Render
+    function renderDynamicPrizeTiers(tiersObj) {
+        const container = document.getElementById('dynamicPrizeTiersContainer');
+        container.innerHTML = '';
+
+        const tiers = tiersObj ? Object.values(tiersObj) : [
+            { title: "🥇 ১ম পুরস্কার", reward: 250000, countText: "১ জন বিজয়ী" },
+            { title: "🥈 ২য় পুরস্কার", reward: 50000, countText: "৫ জন বিজয়ী" },
+            { title: "🥉 ৩য় পুরস্কার", reward: 10000, countText: "১০ জন বিজয়ী" },
+            { title: "🎁 ৪র্থ পুরস্কার", reward: 5000, countText: "২০ জন বিজয়ী" }
+        ];
+
+        tiers.forEach((t, i) => {
+            const card = document.createElement('div');
+            card.className = 'prize-tier-card';
+            card.innerHTML = `
+                <span style="font-size:0.85rem; font-weight:800; color:var(--gold);">${t.title || `পুরস্কার #${i+1}`}</span>
+                <span style="font-size:1.3rem; font-weight:900; font-family:'JetBrains Mono'; color:#fff;">৳ ${(t.reward || 0).toLocaleString()}</span>
+                <span style="font-size:0.72rem; color:var(--text-muted); font-weight:700;">${t.countText || 'বিজয়ী'}</span>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    // ━━━━━━━━━━ RENDER MULTIPLE NUMBERS WITH IMMEDIATE SYNC ━━━━━━━━━━
+    function renderMultiNumbers() {
+        const multiNums = currentSettings.multiPaymentNumbers || {};
+        const buyBox = document.getElementById('buyMultiNumbersContainer');
+        const buyList = document.getElementById('buyNumbersList');
+        const depList = document.getElementById('depNumbersList');
+
+        if (selectedPayment === "Wallet") {
+            buyBox.classList.add('hidden');
+        } else {
+            buyBox.classList.remove('hidden');
+            const list = multiNums[selectedPayment] || [];
+            buyList.innerHTML = '';
+            if (list.length === 0) {
+                buyList.innerHTML = `<div style="font-size:0.8rem; color:var(--gold); padding:8px 0;">কোনো সক্রিয় নম্বর পাওয়া যায়নি।</div>`;
+            } else {
+                list.forEach(item => {
+                    buyList.innerHTML += `
+                        <div class="gateway-number-item">
+                            <div>
+                                <div style="font-size:0.70rem; color:var(--text-muted);">${selectedPayment} (${item.type})</div>
+                                <div style="font-size:1rem; font-weight:800; color:#fff;">${item.number}</div>
+                            </div>
+                            <button class="btn-copy" onclick="copyNum('${item.number}')">কপি</button>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        const depNumList = multiNums[selectedDepGateway] || [];
+        depList.innerHTML = '';
+        if (depNumList.length === 0) {
+            depList.innerHTML = `<div style="font-size:0.8rem; color:var(--gold); padding:8px 0;">কোনো সক্রিয় নম্বর পাওয়া যায়নি।</div>`;
+        } else {
+            depNumList.forEach(item => {
+                depList.innerHTML += `
+                    <div class="gateway-number-item">
+                        <div>
+                            <div style="font-size:0.70rem; color:var(--text-muted);">${selectedDepGateway} (${item.type})</div>
+                            <div style="font-size:1.05rem; font-weight:800; color:var(--gold);">${item.number}</div>
+                        </div>
+                        <button class="btn-copy" onclick="copyNum('${item.number}')">কপি নম্বর</button>
+                    </div>
+                `;
+            });
+        }
+    }
+
+    function copyNum(num) {
+        navigator.clipboard.writeText(num);
+        showToast(`✅ নম্বর কপি হয়েছে: ${num}`, "success");
+    }
+
+    function setDepGateway(gw) {
+        selectedDepGateway = gw;
+        document.querySelectorAll('#view-deposit .mfs-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`#view-deposit .mfs-btn.${gw.toLowerCase()}`)?.classList.add('active');
+        renderMultiNumbers();
+    }
+
+    function setPaymentMethod(method) {
+        selectedPayment = method;
+        document.querySelectorAll('#view-buy .mfs-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`#view-buy .mfs-btn.${method.toLowerCase()}`)?.classList.add('active');
+        renderMultiNumbers();
+    }
+
+    // ━━━━━━━━━━ RENDER LEADERBOARD LIST ━━━━━━━━━━
+    function renderLeaderboard(lbData) {
+        const lbList = Object.values(lbData || {});
+        const container = document.getElementById('leaderboardList');
+        if (!container) return;
+        container.innerHTML = '';
+
+        if (lbList.length === 0) {
+            document.getElementById('podiumWinnerName').innerText = "ড্র অনুষ্ঠিত হওয়ার অপেক্ষায়...";
+            document.getElementById('podiumWinnerPrize').innerText = "৳ ০";
+            document.getElementById('podiumWinnerTicket').innerText = "টিকিট: N/A";
+            container.innerHTML = `<div style="text-align:center; padding:15px; color:var(--text-muted); font-size:0.8rem;">এখনও কোনো উইনার তালিকা নেই।</div>`;
+            return;
+        }
+
+        // Top 1 Gold Podium
+        const top1 = lbList[0];
+        document.getElementById('podiumWinnerName').innerText = top1.name || "চ্যাম্পিয়ন বিজয়ী";
+        document.getElementById('podiumWinnerPrize').innerText = `৳ ${(top1.amount || 0).toLocaleString()}`;
+        document.getElementById('podiumWinnerTicket').innerText = `টিকিট: ${top1.ticketId || 'MT-LUCKY'}`;
+
+        // Other Ranks (Rank 2 onwards)
+        lbList.slice(1).forEach((w, idx) => {
+            const actualRank = idx + 2;
+            let rankClass = "rn";
+            if (actualRank === 2) rankClass = "r2";
+            else if (actualRank === 3) rankClass = "r3";
+
+            const item = document.createElement('div');
+            item.className = 'leaderboard-item';
+            item.innerHTML = `
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="lb-rank ${rankClass}">#${actualRank}</span>
+                    <div>
+                        <div style="font-weight:700; font-size:0.85rem; color:#fff;">${w.name || 'Anonymous'}</div>
+                        <div style="font-size:0.70rem; color:var(--text-muted);">${w.category || 'মেগা ড্র উইনার'}</div>
+                    </div>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-weight:900; font-family:'JetBrains Mono'; color:var(--gold); font-size:0.92rem;">৳ ${(w.amount || 0).toLocaleString()}</div>
+                    <div style="font-size:0.66rem; color:var(--emerald);">টিকিট: ${w.ticketId || 'N/A'}</div>
+                </div>
+            `;
+            container.appendChild(item);
+        });
+    }
+
+    function updateCalculation() {
+        const price = parseInt(document.getElementById('dispTicketPrice').innerText.replace(/[^0-9]/g, '')) || 50;
+        const qty = parseInt(document.getElementById('ticketQty').value) || 1;
+        document.getElementById('dispTotalAmount').innerText = `৳ ${(qty * price).toLocaleString()}`;
+    }
+
+    function openAuthModal() { document.getElementById('modalAuth').classList.remove('hidden'); }
+    function closeAuthModal() { document.getElementById('modalAuth').classList.add('hidden'); }
+
+    function toggleAuthMode() {
+        isRegisterMode = !isRegisterMode;
+        document.getElementById('authTitle').innerText = isRegisterMode ? "নতুন অ্যাকাউন্ট তৈরি করুন" : "অ্যাকাউন্ট লগইন";
+        document.getElementById('grpName').classList.toggle('hidden', !isRegisterMode);
+        document.getElementById('grpRef').classList.toggle('hidden', !isRegisterMode);
+        document.getElementById('btnAuthSubmit').innerText = isRegisterMode ? "রেজিস্টার করুন" : "লগইন করুন";
+        document.getElementById('toggleAuthModeBtn').innerText = isRegisterMode ? "অ্যাকাউন্ট আছে? লগইন করুন" : "অ্যাকাউন্ট নেই? রেজিস্টার করুন";
+    }
+
+    function executeAuth(e) {
+        e.preventDefault();
+        const phone = document.getElementById('authPhone').value.trim();
+        const pass = document.getElementById('authPass').value.trim();
+        const localUsers = JSON.parse(localStorage.getItem('bangla_users')) || [];
+
+        if (isRegisterMode) {
+            const name = document.getElementById('authName').value.trim() || "User";
+            const refCode = document.getElementById('authRefCode').value.trim();
+
+            const existingLocal = localUsers.find(u => u.phone === phone);
+            if (existingLocal) {
+                showToast("এই মোবাইল নম্বর দিয়ে আগেই অ্যাকাউন্ট আছে!", "error");
+                return;
+            }
+
+            const newUser = {
+                id: Date.now(),
+                name: name,
+                phone: phone,
+                pass: pass,
+                balance: 0,
+                joined: new Date().toLocaleDateString(),
+                referredBy: refCode || "",
+                referralCount: 0,
+                hasBoughtTicket: false,
+                avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80"
+            };
+            localUsers.push(newUser);
+            localStorage.setItem('bangla_users', JSON.stringify(localUsers));
+
+            if (isFirebaseReady) {
+                fbDatabase.ref("users/" + phone).set(newUser);
+                if (refCode) {
+                    fbDatabase.ref("users/" + refCode).once("value", (snap) => {
+                        const inviter = snap.val();
+                        if (inviter) {
+                            const newCount = (inviter.referralCount || 0) + 1;
+                            fbDatabase.ref("users/" + refCode + "/referralCount").set(newCount);
+                        }
+                    });
+                }
+            }
+
+            showToast("🎉 রেজিস্ট্রেশন সফল হয়েছে! এখন লগইন করুন।", "success");
+            toggleAuthMode();
+        } else {
+            const performLoginSuccess = (userObj) => {
+                currentUser = userObj;
+                sessionStorage.setItem('bangla_active_user', JSON.stringify(currentUser));
+                listenToUserData(currentUser.phone);
+                updateUserNav();
+                closeAuthModal();
+                showToast(`✅ সফলভাবে লগইন হয়েছেন! স্বাগতম, ${currentUser.name}`, "success");
+                renderUserTickets();
+                renderUserDeposits();
+                renderUserWithdrawals();
+                updateReferralSection();
+                updateProfileSection();
+            };
+
+            if (isFirebaseReady) {
+                fbDatabase.ref("users/" + phone).once("value", (snapshot) => {
+                    const fbUser = snapshot.val();
+                    if (fbUser && String(fbUser.pass).trim() === pass) {
+                        performLoginSuccess(fbUser);
+                    } else {
+                        const localUser = localUsers.find(u => u.phone === phone && String(u.pass).trim() === pass);
+                        if (localUser) performLoginSuccess(localUser);
+                        else showToast("ভুল মোবাইল নম্বর অথবা পাসওয়ার্ড!", "error");
+                    }
+                });
+            } else {
+                const localUser = localUsers.find(u => u.phone === phone && String(u.pass).trim() === pass);
+                if (localUser) performLoginSuccess(localUser);
+                else showToast("ভুল মোবাইল নম্বর অথবা পাসওয়ার্ড!", "error");
+            }
+        }
+    }
+
+    function listenToUserData(phone) {
+        if (!isFirebaseReady) return;
+        fbDatabase.ref("users/" + phone).on("value", (snap) => {
+            const data = snap.val();
+            if (data) {
+                currentUser = data;
+                sessionStorage.setItem('bangla_active_user', JSON.stringify(currentUser));
+                updateUserNav();
+                updateReferralSection();
+                updateProfileSection();
+            }
+        });
+    }
+
+    // ━━━━━━━━━━ USER PROFILE SETUP (PHOTO, NAME, PASS) ━━━━━━━━━━
+    function updateProfileSection() {
+        if (!currentUser) return;
+        document.getElementById('profileNameDisplay').innerText = currentUser.name || 'ইউজার';
+        document.getElementById('profilePhoneDisplay').innerText = currentUser.phone;
+        document.getElementById('profInputName').value = currentUser.name || '';
+        document.getElementById('profSummaryBal').innerText = `৳ ${(currentUser.balance || 0).toLocaleString()}`;
+        document.getElementById('profSummaryRef').innerText = `${currentUser.referralCount || 0} জন`;
+
+        const avatar = currentUser.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80";
+        document.getElementById('profileMainAvatar').src = avatar;
+        document.getElementById('navUserAvatar').src = avatar;
+        document.getElementById('drawerAvatarImg').src = avatar;
+    }
+
+    function handleAvatarUpload(event) {
+        const file = event.target.files[0];
+        if (!file || !currentUser) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 120;
+                canvas.height = 120;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, 120, 120);
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+
+                currentUser.avatar = compressedBase64;
+                if (isFirebaseReady) {
+                    fbDatabase.ref("users/" + currentUser.phone + "/avatar").set(compressedBase64);
+                }
+                updateProfileSection();
+                showToast("✅ প্রোফাইল ছবি আপডেট হয়েছে!", "success");
+            };
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function saveProfileChanges() {
+        if (!currentUser) return;
+        const newName = document.getElementById('profInputName').value.trim();
+        const newPass = document.getElementById('profInputPass').value.trim();
+
+        if (newName) currentUser.name = newName;
+        if (newPass) currentUser.pass = newPass;
+
+        if (isFirebaseReady) {
+            fbDatabase.ref("users/" + currentUser.phone).update({
+                name: currentUser.name,
+                pass: currentUser.pass
+            });
+        }
+        updateUserNav();
+        updateProfileSection();
+        showToast("✅ প্রোফাইল তথ্য সফলভাবে সেভ হয়েছে!", "success");
+    }
+
+    function updateReferralSection() {
+        if (!currentUser) return;
+        const rRules = currentSettings.referralRules || {};
+        const baseDomain = rRules.baseDomain ? rRules.baseDomain.replace(/\/$/, '') : (window.location.origin + window.location.pathname);
+        const refLink = `${baseDomain}?ref=${currentUser.phone}`;
+        document.getElementById('dispRefLinkText').innerText = refLink;
+
+        const count = currentUser.referralCount || 0;
+        document.getElementById('dispUserRefCount').innerText = `${count} জন`;
+        document.getElementById('dispUserRefBonus').innerText = `${count} পিস`;
+    }
+
+    function copyReferralLink() {
+        if (!currentUser) { showToast("আগে লগইন করুন!", "error"); openAuthModal(); return; }
+        const text = document.getElementById('dispRefLinkText').innerText;
+        navigator.clipboard.writeText(text);
+        showToast("✅ রেফারেল লিংক কপি হয়েছে!", "success");
+    }
+
+    function updateUserNav() {
+        if (currentUser) {
+            document.getElementById('pillWallet').classList.remove('hidden');
+            document.getElementById('navUserAvatar').classList.remove('hidden');
+            document.getElementById('userBalanceText').innerText = `৳ ${(currentUser.balance || 0).toLocaleString()}`;
+            document.getElementById('withTabAvailableBal').innerText = `৳ ${(currentUser.balance || 0).toLocaleString()}`;
+            
+            document.getElementById('drawerUserName').innerText = currentUser.name;
+            document.getElementById('drawerUserPhone').innerText = currentUser.phone;
+            document.getElementById('drawerUserBalance').innerText = `ব্যালেন্স: ৳ ${(currentUser.balance || 0).toLocaleString()}`;
+
+            document.getElementById('btnAuthDrawer').classList.add('hidden');
+            document.getElementById('btnLogoutDrawer').classList.remove('hidden');
+
+            renderUserTickets();
+            updateProfileSection();
+        } else {
+            document.getElementById('pillWallet').classList.add('hidden');
+            document.getElementById('navUserAvatar').classList.add('hidden');
+            document.getElementById('drawerUserName').innerText = "অতিথি (লগইন করুন)";
+            document.getElementById('drawerUserPhone').innerText = "নম্বর নেই";
+            document.getElementById('drawerUserBalance').innerText = "ব্যালেন্স: ৳ ০";
+
+            document.getElementById('btnAuthDrawer').classList.remove('hidden');
+            document.getElementById('btnLogoutDrawer').classList.add('hidden');
+        }
+    }
+
+    function userLogout() {
+        currentUser = null;
+        sessionStorage.removeItem('bangla_active_user');
+        updateUserNav();
+        document.getElementById('userTicketsTbody').innerHTML = "";
+        document.getElementById('userDepositsTbody').innerHTML = "";
+        document.getElementById('userWithdrawalsTbody').innerHTML = "";
+        showToast("লগআউট সম্পন্ন হয়েছে।", "success");
+        switchTab('home');
+    }
+
+    function handleTicketCheckout() {
+        if (!currentUser) {
+            showToast("লটারির টিকিট কিনতে আগে লগইন করুন!", "error");
+            openAuthModal();
+            return;
+        }
+
+        const price = parseInt(document.getElementById('dispTicketPrice').innerText.replace(/[^0-9]/g, '')) || 50;
+        const qty = parseInt(document.getElementById('ticketQty').value) || 1;
+        const total = qty * price;
+
+        if (selectedPayment === "Wallet") {
+            if ((currentUser.balance || 0) < total) {
+                showToast(`ওয়ালেটে ব্যালেন্স নেই (৳${currentUser.balance || 0})!`, "error");
+                switchTab('deposit');
+                return;
+            }
+
+            currentUser.balance -= total;
+            currentUser.hasBoughtTicket = true;
+
+            if (isFirebaseReady) {
+                fbDatabase.ref("users/" + currentUser.phone + "/balance").set(currentUser.balance);
+                fbDatabase.ref("users/" + currentUser.phone + "/hasBoughtTicket").set(true);
+            }
+
+            for (let i = 0; i < qty; i++) {
+                const tkt = {
+                    ticketId: "MT-" + Math.floor(100000 + Math.random() * 900000),
+                    userPhone: currentUser.phone,
+                    userName: currentUser.name,
+                    method: "Wallet Balance",
+                    trxId: "WAL-" + Date.now().toString().slice(-6),
+                    date: new Date().toLocaleDateString()
+                };
+                if (isFirebaseReady) fbDatabase.ref("tickets/" + tkt.ticketId).set(tkt);
+            }
+
+            updateUserNav();
+            updateReferralSection();
+            showToast(`🎉 ${qty} টি টিকিট ক্রয় সম্পন্ন হয়েছে!`, "success");
+            switchTab('profile');
+        } else {
+            document.getElementById('tabDepAmount').value = total;
+            setDepGateway(selectedPayment);
+            switchTab('deposit');
+            showToast(`দয়া করে ${selectedPayment}-এ ৳${total} পাঠিয়ে রিকোয়েস্ট দিন।`, "pending");
+        }
+    }
+
+    function submitTabDeposit() {
+        if (!currentUser) { showToast("আগে লগইন করুন!", "error"); openAuthModal(); return; }
+
+        const amount = parseInt(document.getElementById('tabDepAmount').value);
+        const sender = document.getElementById('tabDepSenderPhone').value.trim();
+        const trxId = document.getElementById('tabDepTrxId').value.trim().toUpperCase();
+        const fileInput = document.getElementById('tabDepScreenshot');
+
+        if (!amount || amount <= 0 || !sender || !trxId) {
+            showToast("সব তথ্য সঠিকভাবে পূরণ করুন!", "error");
+            return;
+        }
+
+        if (!fileInput.files || fileInput.files.length === 0) {
+            showToast("পেমেন্টের স্ক্রিনশট সিলেক্ট করুন!", "error");
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const depositId = "DEP-" + Date.now();
+            const depositData = {
+                id: depositId,
+                userPhone: currentUser.phone,
+                userName: currentUser.name,
+                gateway: selectedDepGateway,
+                amount: amount,
+                senderPhone: sender,
+                trxId: trxId,
+                screenshot: e.target.result,
+                status: "PENDING",
+                date: new Date().toLocaleString()
+            };
+
+            if (isFirebaseReady) {
+                fbDatabase.ref("deposits/" + depositId).set(depositData, (err) => {
+                    if (!err) {
+                        showToast("⏳ ডিপোজিট পেন্ডিং (অ্যাডমিন ভেরিফাই করছেন...)", "pending");
+                        document.getElementById('tabDepAmount').value = "";
+                        document.getElementById('tabDepTrxId').value = "";
+                    }
+                });
+            }
+        };
+
+        reader.readAsDataURL(file);
+    }
+
+    function submitTabWithdraw() {
+        if (!currentUser) { showToast("আগে লগইন করুন!", "error"); openAuthModal(); return; }
+
+        const amount = parseInt(document.getElementById('tabWithAmount').value);
+        const method = document.getElementById('tabWithMethod').value;
+        const accNum = document.getElementById('tabWithAccountNum').value.trim();
+        const curBal = currentUser.balance || 0;
+
+        if (!amount || amount <= 0 || !accNum) {
+            showToast("সব তথ্য সঠিকভাবে পূরণ করুন!", "error");
+            return;
+        }
+
+        if (amount > curBal) {
+            showToast(`পর্যাপ্ত ব্যালেন্স নেই! সর্বোচ্চ: ৳${curBal}`, "error");
+            return;
+        }
+
+        currentUser.balance -= amount;
+        if (isFirebaseReady) {
+            fbDatabase.ref("users/" + currentUser.phone + "/balance").set(currentUser.balance);
+        }
+
+        const withdrawId = "WITH-" + Date.now();
+        const withdrawData = {
+            id: withdrawId,
+            userPhone: currentUser.phone,
+            userName: currentUser.name,
+            gateway: method,
+            accountNumber: accNum,
+            amount: amount,
+            status: "PENDING",
+            date: new Date().toLocaleString()
+        };
+
+        if (isFirebaseReady) {
+            fbDatabase.ref("withdrawals/" + withdrawId).set(withdrawData, (err) => {
+                if (!err) {
+                    updateUserNav();
+                    showToast(`⏳ ৳${amount} ক্যাশ আউট পেন্ডিং।`, "pending");
+                    document.getElementById('tabWithAmount').value = "";
+                }
+            });
+        }
+    }
+
+    // ━━━━━━━━━━ CLEAR USER HISTORY ━━━━━━━━━━
+    function clearUserDepositHistory() {
+        if (!currentUser || !confirm("আপনার সমস্ত ডিপোজিট রেকর্ড মুছে ফেলতে চান?")) return;
+        if (isFirebaseReady) {
+            fbDatabase.ref("deposits").once("value", (snap) => {
+                const deps = snap.val() || {};
+                Object.keys(deps).forEach(k => {
+                    if (deps[k].userPhone === currentUser.phone) {
+                        fbDatabase.ref("deposits/" + k).remove();
+                    }
+                });
+                showToast("✅ ডিপোজিট হিস্টোরি ক্লিয়ার হয়েছে!", "success");
+            });
+        }
+    }
+
+    function clearUserWithdrawHistory() {
+        if (!currentUser || !confirm("আপনার সমস্ত ক্যাশআউট হিস্টোরি মুছে ফেলতে চান?")) return;
+        if (isFirebaseReady) {
+            fbDatabase.ref("withdrawals").once("value", (snap) => {
+                const withs = snap.val() || {};
+                Object.keys(withs).forEach(k => {
+                    if (withs[k].userPhone === currentUser.phone) {
+                        fbDatabase.ref("withdrawals/" + k).remove();
+                    }
+                });
+                showToast("✅ ক্যাশআউট হিস্টোরি ক্লিয়ার হয়েছে!", "success");
+            });
+        }
+    }
+
+    function renderUserTickets() {
+        if (!currentUser || !isFirebaseReady) return;
+        fbDatabase.ref("tickets").once("value", (snap) => {
+            const tickets = Object.values(snap.val() || {});
+            const myTickets = tickets.filter(t => t.userPhone === currentUser.phone);
+            const count = myTickets.length;
+
+            const pieceText = `${count} পিস`;
+            document.getElementById('userPcsBadgeInCard').innerText = `আমার টিকিট: ${pieceText}`;
+            document.getElementById('ticketCountTitle').innerText = pieceText;
+            document.getElementById('profSummaryTkt').innerText = pieceText;
+
+            const tbody = document.getElementById('userTicketsTbody');
+            tbody.innerHTML = '';
+
+            if (count === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">এখনও কোনো টিকিট নেই।</td></tr>`;
+                return;
+            }
+
+            myTickets.reverse().forEach(t => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong style="color:var(--gold);">${t.ticketId}</strong></td>
+                        <td>${t.method}</td>
+                        <td>${t.trxId}</td>
+                        <td>${t.date}</td>
+                        <td><span class="badge-active">সক্রিয়</span></td>
+                    </tr>
+                `;
+            });
+        });
+    }
+
+    function renderUserDeposits() {
+        if (!currentUser || !isFirebaseReady) return;
+        fbDatabase.ref("deposits").once("value", (snap) => {
+            const deposits = Object.values(snap.val() || {});
+            const myDeposits = deposits.filter(d => d.userPhone === currentUser.phone);
+            const tbody = document.getElementById('userDepositsTbody');
+            tbody.innerHTML = '';
+
+            if (myDeposits.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">কোনো ডিপোজিট রেকর্ড নেই।</td></tr>`;
+                return;
+            }
+
+            myDeposits.reverse().forEach(d => {
+                let badgeClass = "badge-pending";
+                if (d.status === "APPROVED") badgeClass = "badge-approved";
+                if (d.status === "REJECTED") badgeClass = "badge-rejected";
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${d.gateway}</strong></td>
+                        <td style="color:var(--emerald); font-weight:700;">৳ ${d.amount}</td>
+                        <td>${d.trxId}</td>
+                        <td>${d.date}</td>
+                        <td><span class="${badgeClass}">${d.status}</span></td>
+                    </tr>
+                `;
+            });
+        });
+    }
+
+    function renderUserWithdrawals() {
+        if (!currentUser || !isFirebaseReady) return;
+        fbDatabase.ref("withdrawals").once("value", (snap) => {
+            const withdrawals = Object.values(snap.val() || {});
+            const myWiths = withdrawals.filter(w => w.userPhone === currentUser.phone);
+            const tbody = document.getElementById('userWithdrawalsTbody');
+            tbody.innerHTML = '';
+
+            if (myWiths.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">কোনো ক্যাশ আউট রেকর্ড নেই।</td></tr>`;
+                return;
+            }
+
+            myWiths.reverse().forEach(w => {
+                let badgeClass = "badge-pending";
+                if (w.status === "PAID") badgeClass = "badge-approved";
+                if (w.status === "REJECTED") badgeClass = "badge-rejected";
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${w.gateway}</strong></td>
+                        <td>${w.accountNumber}</td>
+                        <td style="color:var(--gold); font-weight:800;">৳ ${w.amount}</td>
+                        <td>${w.date}</td>
+                        <td><span class="${badgeClass}">${w.status === 'PAID' ? 'PAID' : (w.status === 'REJECTED' ? 'REJECTED' : 'PENDING')}</span></td>
+                    </tr>
+                `;
+            });
+        });
+    }
+
+    // Countdown Timer
+    setInterval(() => {
+        const timerConfig = currentSettings.drawTimer || {};
+        const targetMs = timerConfig.targetTimestamp || 0;
+        const now = Date.now();
+
+        if (targetMs > now) {
+            const diffSec = Math.floor((targetMs - now) / 1000);
+            const days = Math.floor(diffSec / 86400);
+            const hours = Math.floor((diffSec % 86400) / 3600);
+            const mins = Math.floor((diffSec % 3600) / 60);
+            const secs = diffSec % 60;
+
+            document.getElementById('cdDays').innerText = days < 10 ? '0' + days : days;
+            document.getElementById('cdHours').innerText = hours < 10 ? '0' + hours : hours;
+            document.getElementById('cdMins').innerText = mins < 10 ? '0' + mins : mins;
+            document.getElementById('cdSecs').innerText = secs < 10 ? '0' + secs : secs;
+        } else {
+            document.getElementById('cdDays').innerText = "০০";
+            document.getElementById('cdHours').innerText = "০০";
+            document.getElementById('cdMins').innerText = "০০";
+            document.getElementById('cdSecs').innerText = "০০";
+        }
+    }, 1000);
+
+    window.addEventListener('DOMContentLoaded', () => {
+        currentUser = JSON.parse(sessionStorage.getItem('bangla_active_user'));
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const refParam = urlParams.get('ref');
+        if (refParam) {
+            document.getElementById('authRefCode').value = refParam;
+        }
+
+        syncLivePlatform();
+        if (currentUser) {
+            listenToUserData(currentUser.phone);
+        }
+        updateUserNav();
+    });
+</script>
+
+</body>
+</html>
